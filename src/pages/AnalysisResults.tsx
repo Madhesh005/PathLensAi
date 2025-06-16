@@ -25,8 +25,13 @@ import {
   Clock,
   Users,
   Search,
+  BookOpen,
 } from "lucide-react";
 import Spline from '@splinetool/react-spline';
+import { useAuth } from "@/contexts/AuthContext";
+import UserMenu from "@/components/UserMenu";
+import html2pdf from 'html2pdf.js';
+import { toast } from "react-hot-toast";
 
 
 interface SwotData {
@@ -49,6 +54,7 @@ interface LocationState {
 const AnalysisResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
 
   useEffect(() => {
@@ -480,19 +486,66 @@ const AnalysisResults = () => {
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "My Career Analysis Report",
-          text: "Check out my personalized career analysis from PathLens!",
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log("Error sharing:", error);
+    try {
+      // Generate PDF first
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) return;
+
+      // Generate the report HTML content
+      const reportContent = document.getElementById('analysis-report')?.innerHTML;
+      if (!reportContent) {
+        toast.error('Failed to generate report content');
+        printWindow.close();
+        return;
       }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
+
+      // Write the report content to the new window
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Career Analysis Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 24px; }
+              .analysis-section { margin-bottom: 32px; }
+              h3 { color: #334155; }
+            </style>
+          </head>
+          <body>
+            <div id="analysis-report">${reportContent}</div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+
+      // Wait for the new window to finish rendering
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Convert to PDF blob
+      const pdf = await html2pdf().from(printWindow.document.body).output('blob');
+      
+      // Share file
+      const file = new File([pdf], 'career-analysis.pdf', { type: 'application/pdf' });
+      
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Career Analysis Report',
+          text: 'My personalized career analysis from PathLens AI'
+        });
+      } else {
+        // Fallback - download the PDF
+        const url = URL.createObjectURL(file);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'career-analysis.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      toast.error('Failed to share report');
     }
   };
 
@@ -517,15 +570,22 @@ const AnalysisResults = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <Search className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-primary">PathLens AI</span>
+            <a className="text-2xl font-bold text-primary bg-none cursor-pointer" onClick={() => (window.location.href = '/')}>PathLens AI</a>
           </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => (window.location.href = 'swot-input')}>SWOT Input</Button>
-            <Button variant="ghost" onClick={() => (window.location.href = 'results')}>AI Analysis</Button>
-            <Button variant="ghost" onClick={() => (window.location.href = 'roadmap')}>Roadmap</Button>
-            <Button variant="outline" onClick={() => window.location.href = '/login.html'}>Login</Button>
-            <Button onClick={() => window.location.href = '/signup.html'}>Get Started</Button>
-          </div>
+            <div className="flex items-center space-x-4">
+              {currentUser ? (
+                <UserMenu />
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => navigate('/login')}>
+                    Login
+                  </Button>
+                  <Button onClick={() => navigate('/signup')}>
+                    Get Started
+                  </Button>
+                </>
+              )}
+            </div>
         </div>
       </nav>
 
@@ -688,55 +748,126 @@ const AnalysisResults = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Useful Features Section */}
+          <div className="grid md:grid-cols-3 gap-4 mt-8">
+            <Card className="p-4 hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center space-x-2">
+                  <Brain className="h-5 w-5 text-primary" />
+                  <span>AI Career Coach</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Get personalized advice and resources from our AI-powered coach
+                </p>
+                <Button variant="outline" className="w-full">
+                  Access AI Coach
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="p-4 hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center space-x-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <span>Learning Resources</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Access curated learning materials based on your skill gaps
+                </p>
+                <Button variant="outline" className="w-full">
+                  View Resources
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="p-4 hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center space-x-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  <span>Job Matches</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Explore job opportunities that match your profile
+                </p>
+                <Button variant="outline" className="w-full">
+                  View Jobs
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="p-4 hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center space-x-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <span>Skill Analytics</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Track your progress and skill development
+                </p>
+                <Button variant="outline" className="w-full">
+                  View Analytics
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
-            {/* Footer */}
-            <footer className="bg-muted/100 py-12 px-4">
-              <div className="container mx-auto max-w-6xl">
-                <div className="grid md:grid-cols-4 gap-8">
-                  <div>
-                    <div className="flex items-center space-x-2 mb-4">
-                      <Search className="h-6 w-6 text-primary" />
-                      <span className="text-xl font-bold text-primary">PathLens</span>
-                    </div>
-                    <p className="text-muted-foreground mb-4">
-                      AI-powered career guidance to help you discover and achieve your professional goals.
-                    </p>
-                  </div>
-      
-                  <div>
-                    <h4 className="font-semibold mb-4">Product</h4>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">How it Works</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
-                    </ul>
-                  </div>
-      
-                  <div>
-                    <h4 className="font-semibold mb-4">Company</h4>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                    </ul>
-                  </div>
-      
-                  <div>
-                    <h4 className="font-semibold mb-4">Support</h4>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-                    </ul>
-                  </div>
-                </div>
-      
-                <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-                  <p>&copy; 2024 PathLens. All rights reserved.</p>
-                </div>
+      {/* Footer */}
+      <footer className="bg-muted/100 py-12 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <Search className="h-6 w-6 text-primary" />
+                <span className="text-xl font-bold text-primary">PathLens</span>
               </div>
-            </footer>
+              <p className="text-muted-foreground mb-4">
+                AI-powered career guidance to help you discover and achieve your professional goals.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">How it Works</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
+            <p>&copy; 2024 PathLens. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -1,16 +1,17 @@
 // Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyBxaFAdnehL6mjudDozloC1j9CzqxEGa5g",
-    authDomain: "scanguard-ddb19.firebaseapp.com",
-    projectId: "scanguard-ddb19",
-    storageBucket: "scanguard-ddb19.firebasestorage.app",
-    messagingSenderId: "816528078956",
-    appId: "1:816528078956:web:5fd2bdfcdeebb935a44049"
-  };
+  apiKey: "AIzaSyBeYNs7ED9DRUO5P6_79VVkEGgBFo9sJ18",
+  authDomain: "pathlensai2005.firebaseapp.com",
+  projectId: "pathlensai2005",
+  storageBucket: "pathlensai2005.firebasestorage.app",
+  messagingSenderId: "145015295128",
+  appId: "1:145015295128:web:c730f49d79199cf00714ed",
+  measurementId: "G-TZT0QY7M4V"
+};
+
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore(); // Initialize Firestore for user data
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 // Auth state observer
 auth.onAuthStateChanged((user) => {

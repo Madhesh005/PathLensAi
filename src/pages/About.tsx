@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import Spline from '@splinetool/react-spline';
+import { useAuth } from "@/contexts/AuthContext";
+import UserMenu from "@/components/UserMenu";
+import emailjs from '@emailjs/browser';
+import { toast } from "sonner";
 
+
+
+// Initialize EmailJS (add this before the About component)
 
 // Reusable Card Component
 const FeatureCard = ({ title, description, className = "" }) => {
@@ -50,11 +57,14 @@ const FormInput = ({ label, type = "text", placeholder, value, onChange }) => {
 
 // Main App Component
 const About = () => {
+  // Add loading state
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     message: ''
   });
+  const { currentUser } = useAuth();
 
   const handleInputChange = (field) => (e) => {
     setFormData(prev => ({
@@ -63,219 +73,261 @@ const About = () => {
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.email || !formData.message) {
-      alert('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
-    console.log('Message sent:', formData);
-    alert('Message sent successfully!');
-    setFormData({ name: '', email: '', message: '' });
+
+    setIsLoading(true);
+    try {
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        message: formData.message,
+        user_name: currentUser?.displayName || 'Guest',
+        user_email: currentUser?.email || 'Not logged in',
+        reply_to: formData.email
+      };
+
+      const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+      const result = await emailjs.send(
+        SERVICE_ID,
+        TEMPLATE_ID,
+        templateParams,
+        PUBLIC_KEY
+      );
+
+if (result.status === 200) {
+  toast.success('Message sent successfully!');
+  setFormData({ name: '', email: '', message: '' });
+} else {
+  throw new Error('Failed to send message');
+}
+    } catch (error) {
+  console.error('Email error:', error);
+  toast.error('Failed to send message. Please try again.');
+} finally {
+  setIsLoading(false);
+}
   };
 
-  const whyPathLensFeatures = [
-    {
-      title: "AI Career Guidance",
-      description: "Get personalized career suggestions based on your unique strengths and interests."
-    },
-    {
-      title: "Personalized Roadmaps",
-      description: "Follow detailed learning plans and track your progress with data."
-    },
-    {
-      title: "Mentor-Like Support",
-      description: "Get actionable insights and encouragement at every step."
-    }
-  ];
+const whyPathLensFeatures = [
+  {
+    title: "AI Career Guidance",
+    description: "Get personalized career suggestions based on your unique strengths and interests."
+  },
+  {
+    title: "Personalized Roadmaps",
+    description: "Follow detailed learning plans and track your progress with data."
+  },
+  {
+    title: "Mentor-Like Support",
+    description: "Get actionable insights and encouragement at every step."
+  }
+];
 
-  const ourValuesFeatures = [
-    {
-      title: "Clarity",
-      description: "We simplify complex career decisions with clear, actionable insights."
-    },
-    {
-      title: "Inclusivity",
-      description: "PathLens is designed for all backgrounds and learning styles."
-    },
-    {
-      title: "Privacy First",
-      description: "Your data is secure and never shared without your consent."
-    }
-  ];
-  const navigate = useNavigate();
-  return (
-    <div>
-      <div className="fixed inset-0 -z-10">
-        <Spline scene="https://prod.spline.design/WQefUMAul1WPo1p6/scene.splinecode" />
-      </div>
-      {/* Navigation Bar (Same as Index.tsx) */}
-      {/* Navigation */}
-      <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Search className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-primary">PathLens AI</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => (window.location.href = 'swot-input')}>SWOT Input</Button>
-            <Button variant="ghost" onClick={() => (window.location.href = 'results')}>AI Analysis</Button>
-            <Button variant="ghost" onClick={() => (window.location.href = 'roadmap')}>Roadmap</Button>
-            <Button variant="outline" onClick={() => window.location.href = '/login.html'}>Login</Button>
-            <Button onClick={() => window.location.href = '/signup.html'}>Get Started</Button>
-          </div>
-        </div>
-      </nav>
-
-
-
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-
-        {/* About PathLens Section */}
-        <section className="mb-16 font-poppins">
-          <div className="container mx-auto max-w-4xl text-center">
-            <h1 className="text-4xl font-bold mb-6">About PathLens</h1>
-            <p className="text-lg text-gray-900 leading-relaxed">
-              PathLens is your AI-powered career guide. Our mission is to empower students and professionals
-              by providing intelligent, data-driven insights into their career journey. Whether you're exploring
-              options, identifying skill gaps, or tracking progress—PathLens offers a personalized experience.
-            </p>
-          </div>
-          <br /><br /><br />
-
-
-          {/* Why PathLens */}
-          <div className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-8">Why PathLens?</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {whyPathLensFeatures.map((feature, index) => (
-                <FeatureCard
-                  key={index}
-                  title={feature.title}
-                  description={feature.description}
-                  className="transform hover:scale-105 hover:shadow-lg"
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Our Values */}
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-8">Our Values</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {ourValuesFeatures.map((feature, index) => (
-                <FeatureCard
-                  key={index}
-                  title={feature.title}
-                  description={feature.description}
-                  className="transform hover:scale-105 hover:shadow-lg"
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Us Section */}
-        <section className='py-20 px-4 bg-muted/30'>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Contact Us</h1>
-            <p className="text-gray-600">
-              We'd love to hear from you. Reach out with questions, feedback, or partnership ideas.
-            </p>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Send a Message</h3>
-
-              <div className="space-y-4">
-                <FormInput
-                  label="Your Name"
-                  placeholder="Enter your name"
-                  value={formData.name}
-                  onChange={handleInputChange('name')}
-                />
-
-                <FormInput
-                  label="Email Address"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleInputChange('email')}
-                />
-
-                <FormInput
-                  label="Message"
-                  type="textarea"
-                  placeholder="Type your message here"
-                  value={formData.message}
-                  onChange={handleInputChange('message')}
-                />
-
-                <button
-                  onClick={handleSubmit}
-                  className="bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 outline-none"
-                >
-                  Send Message
-                </button>
-              </div>
-            </div>
-
-            <div className="text-center text-gray-900 text-sm">
-              <p>Or reach us at: <a href="mailto:support@pathlens.ai" className="text-blue-600 hover:underline">support@pathlens.ai</a></p>
-            </div>
-          </div>
-        </section>
-      </div>
-      {/* Footer */}
-      <footer className="bg-muted/100 py-12 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <Search className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold text-primary">PathLens</span>
-              </div>
-              <p className="text-muted-foreground mb-4">
-                AI-powered career guidance to help you discover and achieve your professional goals.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">How it Works</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 PathLens. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+const ourValuesFeatures = [
+  {
+    title: "Clarity",
+    description: "We simplify complex career decisions with clear, actionable insights."
+  },
+  {
+    title: "Inclusivity",
+    description: "PathLens is designed for all backgrounds and learning styles."
+  },
+  {
+    title: "Privacy First",
+    description: "Your data is secure and never shared without your consent."
+  }
+];
+const navigate = useNavigate();
+return (
+  <div>
+    <div className="fixed inset-0 -z-10">
+      <Spline scene="https://prod.spline.design/WQefUMAul1WPo1p6/scene.splinecode" />
     </div>
-  );
+    {/* Navigation */}
+    <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <Search className="h-8 w-8 text-primary" />
+          <a className="text-2xl font-bold text-primary bg-none cursor-pointer" onClick={() => (window.location.href = '/')}>PathLens AI</a>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
+            {currentUser ? (
+              <UserMenu />
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => navigate('/login')}>
+                  Login
+                </Button>
+                <Button onClick={() => navigate('/signup')}>
+                  Get Started
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
+
+
+
+    {/* Main Content */}
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+      {/* About PathLens Section */}
+      <section className="mb-16 font-poppins">
+        <div className="container mx-auto max-w-4xl text-center">
+          <h1 className="text-4xl font-bold mb-6">About PathLens</h1>
+          <p className="text-lg text-gray-900 leading-relaxed">
+            PathLens is your AI-powered career guide. Our mission is to empower students and professionals
+            by providing intelligent, data-driven insights into their career journey. Whether you're exploring
+            options, identifying skill gaps, or tracking progress—PathLens offers a personalized experience.
+          </p>
+        </div>
+        <br /><br /><br />
+
+
+        {/* Why PathLens */}
+        <div className="mb-12">
+          <h2 className="text-xl font-bold text-gray-900 mb-8">Why PathLens?</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {whyPathLensFeatures.map((feature, index) => (
+              <FeatureCard
+                key={index}
+                title={feature.title}
+                description={feature.description}
+                className="transform hover:scale-105 hover:shadow-lg"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Our Values */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 mb-8">Our Values</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {ourValuesFeatures.map((feature, index) => (
+              <FeatureCard
+                key={index}
+                title={feature.title}
+                description={feature.description}
+                className="transform hover:scale-105 hover:shadow-lg"
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Us Section */}
+      <section className='py-20 px-4 bg-muted/30'>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Contact Us</h1>
+          <p className="text-gray-600">
+            We'd love to hear from you. Reach out with questions, feedback, or partnership ideas.
+          </p>
+        </div>
+
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Send a Message</h3>
+
+            <div className="space-y-4">
+              <FormInput
+                label="Your Name"
+                placeholder="Enter your name"
+                value={formData.name}
+                onChange={handleInputChange('name')}
+              />
+
+              <FormInput
+                label="Email Address"
+                type="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleInputChange('email')}
+              />
+
+              <FormInput
+                label="Message"
+                type="textarea"
+                placeholder="Type your message here"
+                value={formData.message}
+                onChange={handleInputChange('message')}
+              />
+
+              <Button
+                onClick={handleSubmit}
+                className="w-full"
+                variant="default"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Sending...' : 'Send Message'}
+              </Button>
+            </div>
+          </div>
+
+          <div className="text-center text-gray-900 text-sm">
+            <p>Or reach us at: <a href="mailto:support@pathlens.ai" className="text-blue-600 hover:underline">support@pathlens.ai</a></p>
+          </div>
+        </div>
+      </section>
+    </div>
+    {/* Footer */}
+    <footer className="bg-muted/100 py-12 px-4">
+      <div className="container mx-auto max-w-6xl">
+        <div className="grid md:grid-cols-4 gap-8">
+          <div>
+            <div className="flex items-center space-x-2 mb-4">
+              <Search className="h-6 w-6 text-primary" />
+              <span className="text-xl font-bold text-primary">PathLens</span>
+            </div>
+            <p className="text-muted-foreground mb-4">
+              AI-powered career guidance to help you discover and achieve your professional goals.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-4">Product</h4>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">How it Works</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-4">Company</h4>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-4">Support</h4>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
+          <p>&copy; 2024 PathLens. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+);
 };
 
 export default About;

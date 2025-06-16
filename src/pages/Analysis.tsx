@@ -25,9 +25,12 @@ import {
 import { Link } from "react-router-dom";
 import Spline from '@splinetool/react-spline';
 import { geminiService } from "../services/gemini";
+import { useAuth } from "@/contexts/AuthContext";
+import UserMenu from "@/components/UserMenu";
 
 const Analysis = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isUploadingResume, setIsUploadingResume] = useState(false);
@@ -334,20 +337,27 @@ const Analysis = () => {
         <Spline scene="https://prod.spline.design/WQefUMAul1WPo1p6/scene.splinecode" />
       </div>
       {/* Navigation */}
-      
+
       <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <Search className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-primary">PathLens AI</span>
+            <a className="text-2xl font-bold text-primary bg-none cursor-pointer" onClick={() => (window.location.href = '/')}>PathLens AI</a>
           </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => (window.location.href = 'swot-input')}>SWOT Input</Button>
-            <Button variant="ghost" onClick={() => (window.location.href = 'results')}>AI Analysis</Button>
-            <Button variant="ghost" onClick={() => (window.location.href = 'roadmap')}>Roadmap</Button>
-            <Button variant="outline" onClick={() => window.location.href = '/login.html'}>Login</Button>
-            <Button onClick={() => window.location.href = '/signup.html'}>Get Started</Button>
-          </div>
+            <div className="flex items-center space-x-4">
+              {currentUser ? (
+                <UserMenu />
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => navigate('/login')}>
+                    Login
+                  </Button>
+                  <Button onClick={() => navigate('/signup')}>
+                    Get Started
+                  </Button>
+                </>
+              )}
+            </div>
         </div>
       </nav>
 
@@ -623,53 +633,53 @@ const Analysis = () => {
           </div>
         </div>
       </section>
-            {/* Footer */}
-            <footer className="bg-muted/100 py-12 px-4">
-              <div className="container mx-auto max-w-6xl">
-                <div className="grid md:grid-cols-4 gap-8">
-                  <div>
-                    <div className="flex items-center space-x-2 mb-4">
-                      <Search className="h-6 w-6 text-primary" />
-                      <span className="text-xl font-bold text-primary">PathLens</span>
-                    </div>
-                    <p className="text-muted-foreground mb-4">
-                      AI-powered career guidance to help you discover and achieve your professional goals.
-                    </p>
-                  </div>
-      
-                  <div>
-                    <h4 className="font-semibold mb-4">Product</h4>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">How it Works</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
-                    </ul>
-                  </div>
-      
-                  <div>
-                    <h4 className="font-semibold mb-4">Company</h4>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                    </ul>
-                  </div>
-      
-                  <div>
-                    <h4 className="font-semibold mb-4">Support</h4>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-                      <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-                    </ul>
-                  </div>
-                </div>
-      
-                <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-                  <p>&copy; 2024 PathLens. All rights reserved.</p>
-                </div>
+      {/* Footer */}
+      <footer className="bg-muted/100 py-12 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <Search className="h-6 w-6 text-primary" />
+                <span className="text-xl font-bold text-primary">PathLens</span>
               </div>
-            </footer>
+              <p className="text-muted-foreground mb-4">
+                AI-powered career guidance to help you discover and achieve your professional goals.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">How it Works</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
+            <p>&copy; 2024 PathLens. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -3,10 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowDown, BookOpen, Search, User, CircleUser, LayoutDashboard, ArrowUp } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import About from "./About";
+import { useAuth } from "@/contexts/AuthContext";
+import UserMenu from "@/components/UserMenu";
 import Spline from "@splinetool/react-spline";
 import { useEffect, useState } from "react";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
   const features = [
     {
       icon: Search,
@@ -63,14 +68,26 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <Search className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-primary">PathLens AI</span>
+            <a
+              className="text-2xl font-bold text-primary bg-none cursor-pointer"
+              onClick={() => navigate('/')}
+            >
+              PathLens AI
+            </a>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => (window.location.href = 'swot-input')}>SWOT Input</Button>
-            <Button variant="ghost" onClick={() => (window.location.href = 'results')}>AI Analysis</Button>
-            <Button variant="ghost" onClick={() => (window.location.href = 'roadmap')}>Roadmap</Button>
-            <Button variant="outline" onClick={() => window.location.href = '/login.html'}>Login</Button>
-            <Button onClick={() => window.location.href = '/signup.html'}>Get Started</Button>
+            {currentUser ? (
+              <UserMenu />
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => navigate('/login')}>
+                  Login
+                </Button>
+                <Button onClick={() => navigate('/signup')}>
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
